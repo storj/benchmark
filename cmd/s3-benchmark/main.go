@@ -24,11 +24,9 @@ func main() {
 	var conf s3client.Config
 
 	flag.StringVar(&conf.S3Gateway, "s3-gateway", "127.0.0.1:7777", "s3 gateway address")
-	flag.StringVar(&conf.Satellite, "satellite", "127.0.0.1:7778", "satellite address")
+	flag.StringVar(&conf.Access, "access", "access-grant", "access grant")
 	flag.StringVar(&conf.AccessKey, "accesskey", "insecure-dev-access-key", "access key")
 	flag.StringVar(&conf.SecretKey, "secretkey", "insecure-dev-secret-key", "secret key")
-	flag.StringVar(&conf.APIKey, "apikey", "abc123", "api key")
-	flag.StringVar(&conf.EncryptionKey, "encryptionkey", "abc123", "encryption key")
 	flag.BoolVar(&conf.NoSSL, "no-ssl", false, "disable ssl")
 	flag.StringVar(&conf.ConfigDir, "config-dir", "", "path of config dir to use. If empty, a config will be created.")
 

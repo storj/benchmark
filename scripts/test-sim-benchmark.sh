@@ -8,12 +8,18 @@ set -ueo pipefail
 # To run and filter out storj-sim logs, run:
 #   $ storj-sim -x network test bash ./scripts/test-sim-benchmark.sh | grep -i "test.out"
 
-SATELLITE_0_ADDR=${SATELLITE_0_ADDR:-127.0.0.1:10000}
+access=$(storj-sim network env GATEWAY_0_ACCESS)
+export ACCESS=$(storj-sim network env GATEWAY_0_ACCESS)
+echo "ACCESS:"
+echo "$access"
 
-apiKey=$(storj-sim network env GATEWAY_0_API_KEY)
-export apiKey=$(storj-sim network env GATEWAY_0_API_KEY)
-echo "apiKey:"
-echo "$apiKey"
+aws_access_key=$(storj-sim network env GATEWAY_0_ACCESS_KEY)
+export AWS_ACCESS_KEY_ID=$aws_access_key
+echo "AWS_ACCESS_KEY_ID: $aws_access_key"
+
+aws_secret_key=$(storj-sim network env GATEWAY_0_SECRET_KEY)
+export AWS_SECRET_ACCESS_KEY=$aws_secret_key
+echo "AWS_SECRET_ACCESS_KEY: $aws_secret_key"
 
 # run benchmark tests
 echo
@@ -23,4 +29,4 @@ go test -bench=. -benchmem ./internal/bench/
 # run s3-benchmark with uplink
 echo
 echo "Executing s3-benchmark tests with uplink client against storj-sim..."
-s3-benchmark --client=uplink --satellite="$SATELLITE_0_ADDR" --apikey="$apiKey"
+s3-benchmark --client=uplink --access="$access"

@@ -47,10 +47,12 @@ func testObjects() map[string][]byte {
 
 // uplinkSetup setups an uplink to use for testing uploads/downloads
 func uplinkSetup(bucket string) s3client.Client {
-	conf, err := setupConfig()
-	if err != nil {
-		log.Fatalf("failed to setup s3client config: %+v\n", err)
+	var conf s3client.Config
+	conf.Access = getEnvOrDefault("GATEWAY_0_ACCESS", os.Getenv("ACCESS"))
+	if conf.Access == "" {
+		log.Fatal("failed to setup s3client config: no access grant provided. Expecting an env var $GATEWAY_0_ACCESS or $access")
 	}
+
 	client, err := s3client.NewUplink(conf)
 	if err != nil {
 		log.Fatalf("failed to create s3client NewUplink: %+v\n", err)
@@ -60,21 +62,6 @@ func uplinkSetup(bucket string) s3client.Client {
 		log.Fatalf("failed to create bucket with s3client %q: %+v\n", bucket, err)
 	}
 	return client
-}
-
-func setupConfig() (s3client.Config, error) {
-	const (
-		uplinkEncryptionKey  = "supersecretkey"
-		defaultSatelliteAddr = "127.0.0.1:10000"
-	)
-	var conf s3client.Config
-	conf.EncryptionKey = uplinkEncryptionKey
-	conf.Satellite = getEnvOrDefault("SATELLITE_0_ADDR", defaultSatelliteAddr)
-	conf.APIKey = getEnvOrDefault("GATEWAY_0_API_KEY", os.Getenv("apiKey"))
-	if conf.APIKey == "" {
-		return conf, errors.New("no api key provided. Expecting an env var $GATEWAY_0_API_KEY or $apiKey")
-	}
-	return conf, nil
 }
 
 func getEnvOrDefault(key, fallback string) string {

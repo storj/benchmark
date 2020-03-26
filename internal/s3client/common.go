@@ -5,14 +5,12 @@ package s3client
 
 // Config is the setup for a particular client
 type Config struct {
-	S3Gateway     string
-	Satellite     string
-	AccessKey     string
-	SecretKey     string
-	APIKey        string
-	EncryptionKey string
-	NoSSL         bool
-	ConfigDir     string
+	S3Gateway string
+	AccessKey string
+	SecretKey string
+	Access    string
+	NoSSL     bool
+	ConfigDir string
 }
 
 // Client is the common interface for different implementations

@@ -6,13 +6,10 @@ package s3client
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/zeebo/errs"
-
-	"storj.io/common/fpath"
 )
 
 // UplinkError is class for minio errors
@@ -32,37 +29,22 @@ func NewUplink(conf Config) (Client, error) {
 		return client, nil
 	}
 
-	client.conf.ConfigDir = fpath.ApplicationDir("storj", "s3-client", "uplink")
-
-	// remove existing s3client uplink config so that
-	// we can create a new one with up-to-date settings
-	err := os.RemoveAll(client.conf.ConfigDir)
-	if err != nil {
-		return nil, UplinkError.Wrap(fullExitError(err))
-	}
-
-	cmd := client.cmd("--config-dir", client.conf.ConfigDir,
-		"setup",
-		"--non-interactive", "true",
-		"--api-key", client.conf.APIKey,
-		"--enc.encryption-key", client.conf.EncryptionKey,
-		"--satellite-addr", client.conf.Satellite,
-	)
-
-	_, err = cmd.Output()
-	if err != nil {
-		return nil, UplinkError.Wrap(fullExitError(err))
+	if conf.Access == "" {
+		return nil, UplinkError.New("%s", "access cannot be empty")
 	}
 
 	return client, nil
 }
 
 func (client *Uplink) cmd(subargs ...string) *exec.Cmd {
-	args := []string{}
-
-	configArgs := []string{"--config-dir", client.conf.ConfigDir}
-	args = append(args, configArgs...)
+	args := make([]string, 0, len(subargs)+2)
 	args = append(args, subargs...)
+
+	if client.conf.ConfigDir != "" {
+		args = append(args, "--config-dir", client.conf.ConfigDir)
+	} else {
+		args = append(args, "--access", client.conf.Access)
+	}
 
 	cmd := exec.Command("uplink", args...)
 	return cmd
@@ -71,9 +53,9 @@ func (client *Uplink) cmd(subargs ...string) *exec.Cmd {
 // MakeBucket makes a new bucket
 func (client *Uplink) MakeBucket(bucket, location string) error {
 	cmd := client.cmd("mb", "s3://"+bucket)
-	_, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return UplinkError.Wrap(fullExitError(err))
+		return UplinkError.Wrap(fullExitError(err, string(out)))
 	}
 	return nil
 }
@@ -81,9 +63,9 @@ func (client *Uplink) MakeBucket(bucket, location string) error {
 // RemoveBucket removes a bucket
 func (client *Uplink) RemoveBucket(bucket string) error {
 	cmd := client.cmd("rb", "s3://"+bucket)
-	_, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return UplinkError.Wrap(fullExitError(err))
+		return UplinkError.Wrap(fullExitError(err, string(out)))
 	}
 	return nil
 }
@@ -93,7 +75,7 @@ func (client *Uplink) ListBuckets() ([]string, error) {
 	cmd := client.cmd("ls")
 	data, err := cmd.Output()
 	if err != nil {
-		return nil, UplinkError.Wrap(fullExitError(err))
+		return nil, UplinkError.Wrap(fullExitError(err, string(data)))
 	}
 
 	names := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
@@ -105,9 +87,9 @@ func (client *Uplink) Upload(bucket, objectName string, data []byte) error {
 	// TODO: add upload threshold
 	cmd := client.cmd("put", "s3://"+bucket+"/"+objectName)
 	cmd.Stdin = bytes.NewReader(data)
-	_, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return UplinkError.Wrap(fullExitError(err))
+		return UplinkError.Wrap(fullExitError(err, string(out)))
 	}
 	return nil
 }
@@ -117,7 +99,7 @@ func (client *Uplink) Download(bucket, objectName string, buffer []byte) ([]byte
 	cmd := client.cmd("cat", "s3://"+bucket+"/"+objectName)
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, UplinkError.Wrap(fullExitError(err))
+		return nil, UplinkError.Wrap(fullExitError(err, string(out)))
 	}
 	return out, nil
 }
@@ -125,9 +107,9 @@ func (client *Uplink) Download(bucket, objectName string, buffer []byte) ([]byte
 // Delete deletes object
 func (client *Uplink) Delete(bucket, objectName string) error {
 	cmd := client.cmd("rm", "s3://"+bucket+"/"+objectName)
-	_, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return UplinkError.Wrap(fullExitError(err))
+		return UplinkError.Wrap(fullExitError(err, string(out)))
 	}
 	return nil
 }
@@ -137,7 +119,7 @@ func (client *Uplink) ListObjects(bucket, prefix string) ([]string, error) {
 	cmd := client.cmd("ls", "s3://"+bucket+"/"+prefix)
 	data, err := cmd.Output()
 	if err != nil {
-		return nil, UplinkError.Wrap(fullExitError(err))
+		return nil, UplinkError.Wrap(fullExitError(err, string(data)))
 	}
 
 	names := strings.Split(strings.TrimRight(string(data), "\n"), "\n")

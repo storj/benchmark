@@ -52,9 +52,9 @@ func (client *AWSCLI) cmd(subargs ...string) *exec.Cmd {
 // MakeBucket makes a new bucket
 func (client *AWSCLI) MakeBucket(bucket, location string) error {
 	cmd := client.cmd("s3", "mb", "s3://"+bucket, "--region", location)
-	_, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return AWSCLIError.Wrap(fullExitError(err))
+		return AWSCLIError.Wrap(fullExitError(err, string(out)))
 	}
 	return nil
 }
@@ -62,9 +62,9 @@ func (client *AWSCLI) MakeBucket(bucket, location string) error {
 // RemoveBucket removes a bucket
 func (client *AWSCLI) RemoveBucket(bucket string) error {
 	cmd := client.cmd("s3", "rb", "s3://"+bucket)
-	_, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return AWSCLIError.Wrap(fullExitError(err))
+		return AWSCLIError.Wrap(fullExitError(err, string(out)))
 	}
 	return nil
 }
@@ -74,7 +74,7 @@ func (client *AWSCLI) ListBuckets() ([]string, error) {
 	cmd := client.cmd("s3api", "list-buckets", "--output", "json")
 	jsondata, err := cmd.Output()
 	if err != nil {
-		return nil, AWSCLIError.Wrap(fullExitError(err))
+		return nil, AWSCLIError.Wrap(fullExitError(err, string(jsondata)))
 	}
 
 	var response struct {
@@ -85,7 +85,7 @@ func (client *AWSCLI) ListBuckets() ([]string, error) {
 
 	err = json.Unmarshal(jsondata, &response)
 	if err != nil {
-		return nil, AWSCLIError.Wrap(fullExitError(err))
+		return nil, AWSCLIError.Wrap(fullExitError(err, ""))
 	}
 
 	names := []string{}
@@ -101,9 +101,9 @@ func (client *AWSCLI) Upload(bucket, objectName string, data []byte) error {
 	// TODO: add upload threshold
 	cmd := client.cmd("s3", "cp", "-", "s3://"+bucket+"/"+objectName)
 	cmd.Stdin = bytes.NewReader(data)
-	_, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return AWSCLIError.Wrap(fullExitError(err))
+		return AWSCLIError.Wrap(fullExitError(err, string(out)))
 	}
 	return nil
 }
@@ -113,9 +113,9 @@ func (client *AWSCLI) UploadMultipart(bucket, objectName string, data []byte, th
 	// TODO: add upload threshold
 	cmd := client.cmd("s3", "cp", "-", "s3://"+bucket+"/"+objectName)
 	cmd.Stdin = bytes.NewReader(data)
-	_, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return AWSCLIError.Wrap(fullExitError(err))
+		return AWSCLIError.Wrap(fullExitError(err, string(out)))
 	}
 	return nil
 }
@@ -130,7 +130,7 @@ func (client *AWSCLI) Download(bucket, objectName string, buffer []byte) ([]byte
 
 	err := cmd.Run()
 	if err != nil {
-		return nil, AWSCLIError.Wrap(fullExitError(err))
+		return nil, AWSCLIError.Wrap(fullExitError(err, string(buf.data)))
 	}
 
 	return buf.data, nil
@@ -148,9 +148,9 @@ func (b *bufferWriter) Write(data []byte) (n int, err error) {
 // Delete deletes object
 func (client *AWSCLI) Delete(bucket, objectName string) error {
 	cmd := client.cmd("s3", "rm", "s3://"+bucket+"/"+objectName)
-	_, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return AWSCLIError.Wrap(fullExitError(err))
+		return AWSCLIError.Wrap(fullExitError(err, string(out)))
 	}
 	return nil
 }
@@ -165,7 +165,7 @@ func (client *AWSCLI) ListObjects(bucket, prefix string) ([]string, error) {
 
 	jsondata, err := cmd.Output()
 	if err != nil {
-		return nil, AWSCLIError.Wrap(fullExitError(err))
+		return nil, AWSCLIError.Wrap(fullExitError(err, string(jsondata)))
 	}
 
 	var response struct {
@@ -179,7 +179,7 @@ func (client *AWSCLI) ListObjects(bucket, prefix string) ([]string, error) {
 
 	err = json.Unmarshal(jsondata, &response)
 	if err != nil {
-		return nil, AWSCLIError.Wrap(fullExitError(err))
+		return nil, AWSCLIError.Wrap(fullExitError(err, ""))
 	}
 
 	names := []string{}
@@ -194,12 +194,12 @@ func (client *AWSCLI) ListObjects(bucket, prefix string) ([]string, error) {
 }
 
 // fullExitError returns error string with the Stderr output
-func fullExitError(err error) error {
+func fullExitError(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
 	if exitErr, ok := err.(*exec.ExitError); ok {
-		return fmt.Errorf("%v\n%v", exitErr.Error(), string(exitErr.Stderr))
+		return fmt.Errorf("%v\n%v\n%s", exitErr.Error(), string(exitErr.Stderr), msg)
 	}
 	return err
 }
