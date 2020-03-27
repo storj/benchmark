@@ -46,6 +46,10 @@ func (client *Uplink) cmd(subargs ...string) *exec.Cmd {
 		args = append(args, "--access", client.conf.Access)
 	}
 
+	/* #nosec G204 */ // Go exec.Command doesn't allow to execute more than one
+	// command it passes the arguments to the command properly escaped which are
+	// only interpreted by the OS as the arguments of the indicated program (.i.e
+	// uplink).
 	cmd := exec.Command("uplink", args...)
 	return cmd
 }
