@@ -33,7 +33,7 @@ var testobjectData struct {
 }
 
 // testObjects returns test objects (i.e. slice of bytes) that
-// will be used as the objects to upload/download tests
+// will be used as the objects to upload/download tests.
 func testObjects() map[string][]byte {
 	testobjectData.Do(func() {
 		objects := make(map[string][]byte)
@@ -45,7 +45,7 @@ func testObjects() map[string][]byte {
 	return testobjectData.objects
 }
 
-// uplinkSetup setups an uplink to use for testing uploads/downloads
+// uplinkSetup setups an uplink to use for testing uploads/downloads.
 func uplinkSetup(bucket string) s3client.Client {
 	var conf s3client.Config
 	conf.Access = getEnvOrDefault("GATEWAY_0_ACCESS", os.Getenv("ACCESS"))

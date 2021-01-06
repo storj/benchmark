@@ -14,15 +14,15 @@ import (
 	"github.com/zeebo/errs"
 )
 
-// AWSCLIError is class for minio errors
+// AWSCLIError is class for minio errors.
 var AWSCLIError = errs.Class("aws-cli error")
 
-// AWSCLI implements basic S3 Client with aws-cli
+// AWSCLI implements basic S3 Client with aws-cli.
 type AWSCLI struct {
 	conf Config
 }
 
-// NewAWSCLI creates new Client
+// NewAWSCLI creates new Client.
 func NewAWSCLI(conf Config) (Client, error) {
 	if !strings.HasPrefix(conf.S3Gateway, "https://") &&
 		!strings.HasPrefix(conf.S3Gateway, "http://") {
@@ -53,7 +53,7 @@ func (client *AWSCLI) cmd(subargs ...string) *exec.Cmd {
 	return cmd
 }
 
-// MakeBucket makes a new bucket
+// MakeBucket makes a new bucket.
 func (client *AWSCLI) MakeBucket(bucket, location string) error {
 	cmd := client.cmd("s3", "mb", "s3://"+bucket, "--region", location)
 	out, err := cmd.Output()
@@ -63,7 +63,7 @@ func (client *AWSCLI) MakeBucket(bucket, location string) error {
 	return nil
 }
 
-// RemoveBucket removes a bucket
+// RemoveBucket removes a bucket.
 func (client *AWSCLI) RemoveBucket(bucket string) error {
 	cmd := client.cmd("s3", "rb", "s3://"+bucket)
 	out, err := cmd.Output()
@@ -73,7 +73,7 @@ func (client *AWSCLI) RemoveBucket(bucket string) error {
 	return nil
 }
 
-// ListBuckets lists all buckets
+// ListBuckets lists all buckets.
 func (client *AWSCLI) ListBuckets() ([]string, error) {
 	cmd := client.cmd("s3api", "list-buckets", "--output", "json")
 	jsondata, err := cmd.Output()
@@ -100,7 +100,7 @@ func (client *AWSCLI) ListBuckets() ([]string, error) {
 	return names, nil
 }
 
-// Upload uploads object data to the specified path
+// Upload uploads object data to the specified path.
 func (client *AWSCLI) Upload(bucket, objectName string, data []byte) error {
 	// TODO: add upload threshold
 	cmd := client.cmd("s3", "cp", "-", "s3://"+bucket+"/"+objectName)
@@ -112,7 +112,7 @@ func (client *AWSCLI) Upload(bucket, objectName string, data []byte) error {
 	return nil
 }
 
-// UploadMultipart uses multipart uploads, has hardcoded threshold
+// UploadMultipart uses multipart uploads, has hardcoded threshold.
 func (client *AWSCLI) UploadMultipart(bucket, objectName string, data []byte, threshold int) error {
 	// TODO: add upload threshold
 	cmd := client.cmd("s3", "cp", "-", "s3://"+bucket+"/"+objectName)
@@ -124,7 +124,7 @@ func (client *AWSCLI) UploadMultipart(bucket, objectName string, data []byte, th
 	return nil
 }
 
-// Download downloads object data
+// Download downloads object data.
 func (client *AWSCLI) Download(bucket, objectName string, buffer []byte) ([]byte, error) {
 	cmd := client.cmd("s3", "cp", "s3://"+bucket+"/"+objectName, "-")
 
@@ -149,7 +149,7 @@ func (b *bufferWriter) Write(data []byte) (n int, err error) {
 	return len(data), nil
 }
 
-// Delete deletes object
+// Delete deletes object.
 func (client *AWSCLI) Delete(bucket, objectName string) error {
 	cmd := client.cmd("s3", "rm", "s3://"+bucket+"/"+objectName)
 	out, err := cmd.Output()
@@ -159,7 +159,7 @@ func (client *AWSCLI) Delete(bucket, objectName string) error {
 	return nil
 }
 
-// ListObjects lists objects
+// ListObjects lists objects.
 func (client *AWSCLI) ListObjects(bucket, prefix string) ([]string, error) {
 	cmd := client.cmd("s3api", "list-objects",
 		"--output", "json",
@@ -197,7 +197,7 @@ func (client *AWSCLI) ListObjects(bucket, prefix string) ([]string, error) {
 	return names, nil
 }
 
-// fullExitError returns error string with the Stderr output
+// fullExitError returns error string with the Stderr output.
 func fullExitError(err error, msg string) error {
 	if err == nil {
 		return nil

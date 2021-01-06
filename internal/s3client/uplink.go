@@ -12,15 +12,15 @@ import (
 	"github.com/zeebo/errs"
 )
 
-// UplinkError is class for minio errors
+// UplinkError is class for minio errors.
 var UplinkError = errs.Class("uplink error")
 
-// Uplink implements basic S3 Client with uplink
+// Uplink implements basic S3 Client with uplink.
 type Uplink struct {
 	conf Config
 }
 
-// NewUplink creates new Client
+// NewUplink creates new Client.
 func NewUplink(conf Config) (Client, error) {
 	client := &Uplink{conf}
 
@@ -54,7 +54,7 @@ func (client *Uplink) cmd(subargs ...string) *exec.Cmd {
 	return cmd
 }
 
-// MakeBucket makes a new bucket
+// MakeBucket makes a new bucket.
 func (client *Uplink) MakeBucket(bucket, location string) error {
 	cmd := client.cmd("mb", "s3://"+bucket)
 	out, err := cmd.Output()
@@ -64,7 +64,7 @@ func (client *Uplink) MakeBucket(bucket, location string) error {
 	return nil
 }
 
-// RemoveBucket removes a bucket
+// RemoveBucket removes a bucket.
 func (client *Uplink) RemoveBucket(bucket string) error {
 	cmd := client.cmd("rb", "s3://"+bucket)
 	out, err := cmd.Output()
@@ -74,7 +74,7 @@ func (client *Uplink) RemoveBucket(bucket string) error {
 	return nil
 }
 
-// ListBuckets lists all buckets
+// ListBuckets lists all buckets.
 func (client *Uplink) ListBuckets() ([]string, error) {
 	cmd := client.cmd("ls")
 	data, err := cmd.Output()
@@ -86,7 +86,7 @@ func (client *Uplink) ListBuckets() ([]string, error) {
 	return names, nil
 }
 
-// Upload uploads object data to the specified path
+// Upload uploads object data to the specified path.
 func (client *Uplink) Upload(bucket, objectName string, data []byte) error {
 	// TODO: add upload threshold
 	cmd := client.cmd("put", "s3://"+bucket+"/"+objectName)
@@ -98,7 +98,7 @@ func (client *Uplink) Upload(bucket, objectName string, data []byte) error {
 	return nil
 }
 
-// Download downloads object data
+// Download downloads object data.
 func (client *Uplink) Download(bucket, objectName string, buffer []byte) ([]byte, error) {
 	cmd := client.cmd("cat", "s3://"+bucket+"/"+objectName)
 	out, err := cmd.Output()
@@ -108,7 +108,7 @@ func (client *Uplink) Download(bucket, objectName string, buffer []byte) ([]byte
 	return out, nil
 }
 
-// Delete deletes object
+// Delete deletes object.
 func (client *Uplink) Delete(bucket, objectName string) error {
 	cmd := client.cmd("rm", "s3://"+bucket+"/"+objectName)
 	out, err := cmd.Output()
@@ -118,7 +118,7 @@ func (client *Uplink) Delete(bucket, objectName string) error {
 	return nil
 }
 
-// ListObjects lists objects
+// ListObjects lists objects.
 func (client *Uplink) ListObjects(bucket, prefix string) ([]string, error) {
 	cmd := client.cmd("ls", "s3://"+bucket+"/"+prefix)
 	data, err := cmd.Output()

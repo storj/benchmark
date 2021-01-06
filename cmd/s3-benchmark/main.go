@@ -129,13 +129,15 @@ func main() {
 	measurements := []Measurement{}
 	measurement, err := ListBenchmark(client, bucket, *listsize, *count, *duration)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		return
 	}
 	measurements = append(measurements, measurement)
 	for _, filesize := range filesizes.Sizes() {
 		measurement, err := FileBenchmark(client, bucket, filesize, *count, *duration)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			return
 		}
 		measurements = append(measurements, measurement)
 	}
@@ -162,25 +164,26 @@ func main() {
 	if *plotname != "" {
 		err := Plot(*plotname, measurements)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			return
 		}
 	}
 }
 
-// Measurement contains measurements for different requests
+// Measurement contains measurements for different requests.
 type Measurement struct {
 	Size    memory.Size
 	Results []*Result
 }
 
-// Result contains durations for specific tests
+// Result contains durations for specific tests.
 type Result struct {
 	Name      string
 	WithSpeed bool
 	Durations []time.Duration
 }
 
-// Result finds or creates a result with the specified name
+// Result finds or creates a result with the specified name.
 func (m *Measurement) Result(name string) *Result {
 	for _, x := range m.Results {
 		if x.Name == name {
@@ -194,21 +197,21 @@ func (m *Measurement) Result(name string) *Result {
 	return r
 }
 
-// Record records a time measurement
+// Record records a time measurement.
 func (m *Measurement) Record(name string, duration time.Duration) {
 	r := m.Result(name)
 	r.WithSpeed = false
 	r.Durations = append(r.Durations, duration)
 }
 
-// RecordSpeed records a time measurement that can be expressed in speed
+// RecordSpeed records a time measurement that can be expressed in speed.
 func (m *Measurement) RecordSpeed(name string, duration time.Duration) {
 	r := m.Result(name)
 	r.WithSpeed = true
 	r.Durations = append(r.Durations, duration)
 }
 
-// PrintStats prints important valueas about the measurement
+// PrintStats prints important valueas about the measurement.
 func (m *Measurement) PrintStats(w io.Writer) {
 	type Hist struct {
 		*Result
@@ -258,7 +261,7 @@ func (m *Measurement) PrintStats(w io.Writer) {
 	}
 }
 
-// FileBenchmark runs file upload, download and delete benchmarks on bucket with given filesize
+// FileBenchmark runs file upload, download and delete benchmarks on bucket with given filesize.
 func FileBenchmark(client s3client.Client, bucket string, filesize memory.Size, count int, duration time.Duration) (Measurement, error) {
 	log.Print("Benchmarking file size ", filesize.String(), " ")
 
@@ -323,12 +326,12 @@ func FileBenchmark(client s3client.Client, bucket string, filesize memory.Size, 
 	return measurement, nil
 }
 
-// ListBenchmark runs list buckets, folders and files benchmarks on bucket
+// ListBenchmark runs list buckets, folders and files benchmarks on bucket.
 func ListBenchmark(client s3client.Client, bucket string, listsize int, count int, duration time.Duration) (Measurement, error) {
 	log.Print("Benchmarking list")
 	defer fmt.Println()
 	measurement := Measurement{}
-	//measurement.Size = listsize
+	// measurement.Size = listsize
 	for k := 0; k < count; k++ {
 		{ // list folders
 			start := hrtime.Now()
