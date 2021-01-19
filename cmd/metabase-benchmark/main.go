@@ -5,9 +5,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"text/tabwriter"
 	"time"
@@ -54,6 +56,7 @@ func main() {
 
 	dburl := flag.String("database-url", "postgres://postgres@localhost/benchmark?sslmode=disable", "database url")
 	count := flag.Int("count", 50, "benchmark count")
+	jsonout := flag.String("json", "measurement.json", "json benchmark output")
 	duration := flag.Duration("time", 2*time.Minute, "maximum benchmark time per filesize")
 	flag.Parse()
 
@@ -138,6 +141,14 @@ func main() {
 		m.PrintStats(w)
 	}
 	_ = w.Flush()
+
+	if *jsonout != "" {
+		data, err := json.Marshal(measurements)
+		if err != nil {
+			log.Fatal("JSON marshal failed", zap.Error(err))
+		}
+		_ = ioutil.WriteFile(*jsonout, data, 0644)
+	}
 
 	// if *plotname != "" {
 	// 	err := Plot(*plotname, measurements)
