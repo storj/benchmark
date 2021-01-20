@@ -263,7 +263,7 @@ func UploadObjectBenchmark(ctx context.Context, db metainfo.MetabaseDB, projectI
 		objectStream := metabase.ObjectStream{
 			ProjectID:  projectID,
 			BucketName: bucketName,
-			ObjectKey:  metabase.ObjectKey(testrand.Path()),
+			ObjectKey:  metabase.ObjectKey(testrand.Path() + "/" + testrand.UUID().String()),
 			Version:    1,
 			StreamID:   testrand.UUID(),
 		}

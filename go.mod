@@ -12,5 +12,5 @@ require (
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	gopkg.in/ini.v1 v1.55.0 // indirect
 	storj.io/common v0.0.0-20210113135631-07a5dc68dc1c
-	storj.io/storj v0.12.1-0.20210114151602-38beecc7ad88
+	storj.io/storj v0.12.1-0.20210119153330-d54ae9f10f2f
 )
