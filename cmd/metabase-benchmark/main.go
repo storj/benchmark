@@ -30,13 +30,27 @@ func main() {
 	flag.IntVar(&bench.Count, "count", bench.Count, "benchmark count")
 	flag.DurationVar(&bench.MaxDuration, "time", bench.MaxDuration, "maximum benchmark time per scenario")
 
+	load := flag.String("load", "", "load measurements from json")
 	jsonout := flag.String("json", "measurement.json", "json benchmark output")
 
 	flag.Parse()
 
-	measurements, err := bench.Run(ctx, log)
-	if err != nil {
-		log.Fatal("Benchmark failed.", zap.Error(err))
+	var measurements []Measurement
+
+	if *load != "" {
+		data, err := ioutil.ReadFile(*load)
+		if err != nil {
+			log.Fatal("Benchmark failed.", zap.Error(err))
+		}
+		err = json.Unmarshal(data, &measurements)
+		if err != nil {
+			log.Fatal("Benchmark failed.", zap.Error(err))
+		}
+	} else {
+		measurements, err = bench.Run(ctx, log)
+		if err != nil {
+			log.Fatal("Benchmark failed.", zap.Error(err))
+		}
 	}
 
 	fmt.Println()
@@ -58,7 +72,7 @@ func main() {
 	}
 	_ = w.Flush()
 
-	if *jsonout != "" {
+	if *load == "" && *jsonout != "" {
 		data, err := json.Marshal(measurements)
 		if err != nil {
 			log.Fatal("JSON marshal failed", zap.Error(err))
