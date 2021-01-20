@@ -11,9 +11,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/loov/hrtime"
 	"go.uber.org/zap"
 )
 
@@ -75,7 +77,6 @@ func main() {
 		}
 	}
 
-	fmt.Println()
 	for _, out := range outputs {
 		func(out Output) {
 			var output io.Writer
@@ -88,6 +89,10 @@ func main() {
 					defer func() { _ = f.Close() }()
 					output = f
 				}
+			}
+
+			if output == os.Stdout {
+				fmt.Println()
 			}
 
 			switch out.Type {
@@ -137,8 +142,26 @@ func WriteTable(ctx context.Context, w io.Writer, measurements []Measurement) er
 	return nil
 }
 
+var rxSpace = regexp.MustCompile(`\s+`)
+
 // WriteBenchStat writes measurements such that they are compatible with benchstat.
+//
+// Specification https://go.googlesource.com/proposal/+/master/design/14313-benchmark-format.md.
 func WriteBenchStat(ctx context.Context, w io.Writer, measurements []Measurement) error {
+	for _, m := range measurements {
+		for _, r := range m.Results {
+			test := rxSpace.ReplaceAllString(r.Name, "")
+			name := fmt.Sprintf("Benchmark%s/parts=%d/segments=%d", test, m.Parts, m.Segments)
+
+			h := hrtime.NewDurationHistogram(r.Durations, &hrtime.HistogramOptions{
+				BinCount:        10,
+				NiceRange:       true,
+				ClampMaximum:    0,
+				ClampPercentile: 0.999,
+			})
+			fmt.Fprintf(w, "%s  %10d  %10.0f ns/op  %10.0f ns/p90  %10.0f ns/p99\n", name, len(r.Durations), h.Average, h.P90, h.P99)
+		}
+	}
 	return nil
 }
 
