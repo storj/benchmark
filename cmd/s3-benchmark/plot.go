@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/loov/plot"
+	"github.com/loov/plot/plotsvg"
 )
 
 var palette = []color.Color{
@@ -88,7 +89,7 @@ func Plot(filename string, measurements []Measurement) error {
 		}
 	}
 
-	svgCanvas := plot.NewSVG(1500, 150*float64(len(measurements)))
+	svgCanvas := plotsvg.New(1500, 150*float64(len(measurements)))
 	p.Draw(svgCanvas)
 
 	return ioutil.WriteFile(filename, svgCanvas.Bytes(), 0755)

@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/go-ini/ini v1.55.0 // indirect
 	github.com/loov/hrtime v1.0.1
-	github.com/loov/plot v0.0.0-20190402091651-f4b09b520b03
+	github.com/loov/plot v0.0.0-20210121121947-1165ff277fe2
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/zeebo/errs v1.2.2
 	go.uber.org/zap v1.16.0

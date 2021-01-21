@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/tabwriter"
@@ -34,7 +35,11 @@ func main() {
 	flag.IntVar(&bench.Count, "count", bench.Count, "benchmark count")
 	flag.DurationVar(&bench.MaxDuration, "time", bench.MaxDuration, "maximum benchmark time per scenario")
 
-	load := flag.String("load", "", "load measurements from json")
+	var loads []string
+	flag.Var(funcFlag(func(out string) error {
+		loads = append(loads, out)
+		return nil
+	}), "load", "load measurements from json")
 
 	type Output struct {
 		Type string
@@ -55,26 +60,37 @@ func main() {
 			outputs = append(outputs, Output{Type: out})
 		}
 		return nil
-	}), "out", "type:file, supported types (table, std, json, svg)")
+	}), "out", "type:file, supported types (table, std, json, plot-percentile)")
 
 	flag.Parse()
 
-	var measurements []Measurement
+	var results []BenchmarkResult
 
-	if *load != "" {
-		data, err := ioutil.ReadFile(*load)
-		if err != nil {
-			log.Fatal("Benchmark failed.", zap.Error(err))
-		}
-		err = json.Unmarshal(data, &measurements)
-		if err != nil {
-			log.Fatal("Benchmark failed.", zap.Error(err))
+	if len(loads) > 0 {
+		for _, name := range loads {
+			data, err := ioutil.ReadFile(name)
+			if err != nil {
+				log.Fatal("Benchmark failed.", zap.Error(err))
+			}
+			var measurements []Measurement
+			err = json.Unmarshal(data, &measurements)
+			if err != nil {
+				log.Fatal("Benchmark failed.", zap.Error(err))
+			}
+			results = append(results, BenchmarkResult{
+				Name:         filepath.Base(strings.TrimSuffix(name, filepath.Ext(name))),
+				Measurements: measurements,
+			})
 		}
 	} else {
-		measurements, err = bench.Run(ctx, log)
+		measurements, err := bench.Run(ctx, log)
 		if err != nil {
 			log.Fatal("Benchmark failed.", zap.Error(err))
 		}
+		results = append(results, BenchmarkResult{
+			Name:         "Benchmark",
+			Measurements: measurements,
+		})
 	}
 
 	for _, out := range outputs {
@@ -97,20 +113,43 @@ func main() {
 
 			switch out.Type {
 			case "table":
-				err := WriteTable(ctx, output, measurements)
+				if len(results) != 1 {
+					log.Error("multiple measurments not supported for 'table'")
+					return
+				}
+
+				err := WriteTable(ctx, output, results[0].Measurements)
 				if err != nil {
 					log.Error("writing table failed", zap.Error(err))
 				}
 			case "std":
-				err := WriteBenchStat(ctx, output, measurements)
+				if len(results) != 1 {
+					log.Error("multiple measurments not supported for 'std'")
+					return
+				}
+
+				err := WriteBenchStat(ctx, output, results[0].Measurements)
 				if err != nil {
 					log.Error("writing benchstat failed", zap.Error(err))
 				}
+
 			case "json":
-				err := json.NewEncoder(output).Encode(measurements)
+				if len(results) != 1 {
+					log.Error("multiple measurments not supported for 'json'")
+					return
+				}
+
+				err := json.NewEncoder(output).Encode(results[0].Measurements)
 				if err != nil {
 					log.Error("writing json failed", zap.Error(err))
 				}
+
+			case "plot-percentile":
+				err := PlotPercentiles(ctx, output, results)
+				if err != nil {
+					log.Error("writing plot failed", zap.Error(err))
+				}
+
 			default:
 				log.Error("output type not supported", zap.String("type", out.Type), zap.String("file", out.File))
 			}

@@ -11,6 +11,12 @@ import (
 	"github.com/loov/hrtime"
 )
 
+// BenchmarkResult is the full results of the measurements.
+type BenchmarkResult struct {
+	Name         string
+	Measurements []Measurement
+}
+
 // Measurement contains measurements for different requests.
 type Measurement struct {
 	Scenario
@@ -41,6 +47,16 @@ func (m *Measurement) Result(name string) *Result {
 func (m *Measurement) Record(name string, duration time.Duration) {
 	r := m.Result(name)
 	r.Durations = append(r.Durations, duration)
+}
+
+// ResultByName finds results by name.
+func (m *Measurement) ResultByName(name string) *Result {
+	for _, r := range m.Results {
+		if r.Name == name {
+			return r
+		}
+	}
+	return nil
 }
 
 // PrintStats prints important valueas about the measurement.
