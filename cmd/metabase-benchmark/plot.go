@@ -164,7 +164,7 @@ func PlotPercentiles(ctx context.Context, w io.Writer, results []BenchmarkResult
 	}
 
 	canvas := plotsvg.New(plot.Length(columns*gridCellWidth)+captionHeight, totalHeight)
-	canvas.Style += "\n.bold { font-weight: bolder; }"
+	canvas.Style += "\n.bold { font-weight: bolder; }\nsvg { background: #fff; }"
 	p.Draw(canvas)
 
 	_, err := w.Write(canvas.Bytes())
