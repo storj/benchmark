@@ -60,7 +60,7 @@ func main() {
 			outputs = append(outputs, Output{Type: out})
 		}
 		return nil
-	}), "out", "type:file, supported types (table, std, json, plot-percentile)")
+	}), "out", "type:file, supported types (table, std, stdx, json, plot-percentile)")
 
 	flag.Parse()
 
@@ -133,6 +133,17 @@ func main() {
 					log.Error("writing benchstat failed", zap.Error(err))
 				}
 
+			case "stdx":
+				if len(results) != 1 {
+					log.Error("multiple measurments not supported for 'stdx'")
+					return
+				}
+
+				err := WriteBenchStatLong(ctx, output, results[0].Measurements)
+				if err != nil {
+					log.Error("writing benchstat failed", zap.Error(err))
+				}
+
 			case "json":
 				if len(results) != 1 {
 					log.Error("multiple measurments not supported for 'json'")
@@ -199,6 +210,23 @@ func WriteBenchStat(ctx context.Context, w io.Writer, measurements []Measurement
 				ClampPercentile: 0.999,
 			})
 			fmt.Fprintf(w, "%s  %10d  %10.0f ns/op  %10.0f ns/p90  %10.0f ns/p99\n", name, len(r.Durations), h.Average, h.P90, h.P99)
+		}
+	}
+	return nil
+}
+
+// WriteBenchStatLong writes measurements such that they are compatible with benchstat.
+// This writes each result separately, rather than as the average and percentiles.
+//
+// Specification https://go.googlesource.com/proposal/+/master/design/14313-benchmark-format.md.
+func WriteBenchStatLong(ctx context.Context, w io.Writer, measurements []Measurement) error {
+	for _, m := range measurements {
+		for _, r := range m.Results {
+			test := rxSpace.ReplaceAllString(r.Name, "")
+			name := fmt.Sprintf("Benchmark%s/parts=%d/segments=%d", test, m.Parts, m.Segments)
+			for _, v := range r.Durations {
+				fmt.Fprintf(w, "%s  %d  %10d ns/op\n", name, 1, v.Nanoseconds())
+			}
 		}
 	}
 	return nil
