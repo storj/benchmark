@@ -16,8 +16,7 @@ import (
 	"storj.io/common/storj"
 	"storj.io/common/testrand"
 	"storj.io/common/uuid"
-	"storj.io/storj/satellite/metainfo"
-	"storj.io/storj/satellite/metainfo/metabase"
+	"storj.io/storj/satellite/metabase"
 )
 
 // Scenario defines arguments for an object.
@@ -80,7 +79,7 @@ func (b *Benchmark) Scenarios() []Scenario {
 
 // Run runs all benchmarks.
 func (b *Benchmark) Run(ctx context.Context, log *zap.Logger) ([]Measurement, error) {
-	db, err := metainfo.OpenMetabase(ctx, log, b.DBURL)
+	db, err := metabase.Open(ctx, log, b.DBURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open metabase: %w", err)
 	}
@@ -135,7 +134,7 @@ func (b *Benchmark) Run(ctx context.Context, log *zap.Logger) ([]Measurement, er
 }
 
 // Upload runs upload object benchmarks with given number of parts and segments.
-func (b *Benchmark) Upload(ctx context.Context, db metainfo.MetabaseDB, scenario Scenario) (Measurement, error) {
+func (b *Benchmark) Upload(ctx context.Context, db *metabase.DB, scenario Scenario) (Measurement, error) {
 	fmt.Printf("Benchmark Upload (Parts:%d, Segments:%d): ", scenario.Parts, scenario.Segments)
 	defer fmt.Println()
 
@@ -184,7 +183,7 @@ func (b *Benchmark) Upload(ctx context.Context, db metainfo.MetabaseDB, scenario
 				},
 			})
 			if err != nil {
-				return measurement, fmt.Errorf("begin object failed: %+v", err)
+				return measurement, fmt.Errorf("begin object failed: %w", err)
 			}
 			finish := hrtime.Now()
 			measurement.Record("Begin Object", finish-start)
@@ -211,7 +210,7 @@ func (b *Benchmark) Upload(ctx context.Context, db metainfo.MetabaseDB, scenario
 								Pieces:      pieces,
 							})
 							if err != nil {
-								return fmt.Errorf("begin remote segment failed: %+v", err)
+								return fmt.Errorf("begin remote segment failed: %w", err)
 							}
 							finish := hrtime.Now()
 							measurement.Record("Begin Remote Segment", finish-start)
@@ -235,7 +234,7 @@ func (b *Benchmark) Upload(ctx context.Context, db metainfo.MetabaseDB, scenario
 								Redundancy:        b.Redundancy,
 							})
 							if err != nil {
-								return fmt.Errorf("commit remote segment failed: %+v", err)
+								return fmt.Errorf("commit remote segment failed: %w", err)
 							}
 							finish := hrtime.Now()
 							measurement.Record("Commit Remote Segment", finish-start)
@@ -258,7 +257,7 @@ func (b *Benchmark) Upload(ctx context.Context, db metainfo.MetabaseDB, scenario
 							PlainSize:         int32(segmentSize),
 						})
 						if err != nil {
-							return fmt.Errorf("commit inline segment failed: %+v", err)
+							return fmt.Errorf("commit inline segment failed: %w", err)
 						}
 						finish := hrtime.Now()
 						measurement.Record("Commit Inline Segment", finish-start)
@@ -278,7 +277,7 @@ func (b *Benchmark) Upload(ctx context.Context, db metainfo.MetabaseDB, scenario
 				ObjectStream: objectStream,
 			})
 			if err != nil {
-				return measurement, fmt.Errorf("commit object failed: %+v", err)
+				return measurement, fmt.Errorf("commit object failed: %w", err)
 			}
 			finish := hrtime.Now()
 			measurement.Record("Commit Object", finish-start)
@@ -292,7 +291,7 @@ func (b *Benchmark) Upload(ctx context.Context, db metainfo.MetabaseDB, scenario
 }
 
 // Iterate runs list bucket benchmarks on the full benchmark bucket.
-func (b *Benchmark) Iterate(ctx context.Context, db metainfo.MetabaseDB) (Measurement, error) {
+func (b *Benchmark) Iterate(ctx context.Context, db *metabase.DB) (Measurement, error) {
 	fmt.Printf("Benchmark Iterate: ")
 	defer fmt.Println()
 
@@ -316,7 +315,7 @@ func (b *Benchmark) Iterate(ctx context.Context, db metainfo.MetabaseDB) (Measur
 			return nil
 		})
 		if err != nil {
-			return measurement, fmt.Errorf("iterate objects failed: %+v", err)
+			return measurement, fmt.Errorf("iterate objects failed: %w", err)
 		}
 		finish := hrtime.Now()
 		measurement.Record("Iterate Objects", finish-start)
@@ -326,7 +325,7 @@ func (b *Benchmark) Iterate(ctx context.Context, db metainfo.MetabaseDB) (Measur
 }
 
 // ListSegments runs list segments benchmarks of objects with given number of parts and segments.
-func (b *Benchmark) ListSegments(ctx context.Context, db metainfo.MetabaseDB, scenario Scenario) (Measurement, error) {
+func (b *Benchmark) ListSegments(ctx context.Context, db *metabase.DB, scenario Scenario) (Measurement, error) {
 	fmt.Printf("Benchmark ListSegments (Parts:%d, Segments:%d): ", scenario.Parts, scenario.Segments)
 	defer fmt.Println()
 
@@ -341,7 +340,7 @@ func (b *Benchmark) ListSegments(ctx context.Context, db metainfo.MetabaseDB, sc
 			ObjectLocation: location,
 		})
 		if err != nil {
-			return measurement, fmt.Errorf("get object failed: %+v", err)
+			return measurement, fmt.Errorf("get object failed: %w", err)
 		}
 
 		// list object's segments
@@ -351,7 +350,7 @@ func (b *Benchmark) ListSegments(ctx context.Context, db metainfo.MetabaseDB, sc
 				StreamID: object.StreamID,
 			})
 			if err != nil {
-				return measurement, fmt.Errorf("list segment failed: %+v", err)
+				return measurement, fmt.Errorf("list segment failed: %w", err)
 			}
 			if !result.More {
 				break
@@ -365,7 +364,7 @@ func (b *Benchmark) ListSegments(ctx context.Context, db metainfo.MetabaseDB, sc
 }
 
 // Download runs download object benchmarks with given number of parts and segments.
-func (b *Benchmark) Download(ctx context.Context, db metainfo.MetabaseDB, scenario Scenario) (Measurement, error) {
+func (b *Benchmark) Download(ctx context.Context, db *metabase.DB, scenario Scenario) (Measurement, error) {
 	fmt.Printf("Benchmark Download (Parts:%d, Segments:%d): ", scenario.Parts, scenario.Segments)
 	defer fmt.Println()
 
@@ -382,7 +381,7 @@ func (b *Benchmark) Download(ctx context.Context, db metainfo.MetabaseDB, scenar
 			ObjectLocation: location,
 		})
 		if err != nil {
-			return measurement, fmt.Errorf("get object failed: %+v", err)
+			return measurement, fmt.Errorf("get object failed: %w", err)
 		}
 		finish := hrtime.Now()
 		measurement.Record("Get Object", finish-start)
@@ -399,7 +398,7 @@ func (b *Benchmark) Download(ctx context.Context, db metainfo.MetabaseDB, scenar
 					},
 				})
 				if err != nil {
-					return measurement, fmt.Errorf("get segment failed: %+v", err)
+					return measurement, fmt.Errorf("get segment failed: %w", err)
 				}
 				finish := hrtime.Now()
 				measurement.Record("Get Segment", finish-start)
@@ -414,7 +413,7 @@ func (b *Benchmark) Download(ctx context.Context, db metainfo.MetabaseDB, scenar
 }
 
 // Delete runs delete object benchmarks with given number of parts and segments.
-func (b *Benchmark) Delete(ctx context.Context, db metainfo.MetabaseDB, scenario Scenario) (Measurement, error) {
+func (b *Benchmark) Delete(ctx context.Context, db *metabase.DB, scenario Scenario) (Measurement, error) {
 	fmt.Printf("Benchmark Delete (Parts:%d, Segments:%d): ", scenario.Parts, scenario.Segments)
 	defer fmt.Println()
 
@@ -429,7 +428,7 @@ func (b *Benchmark) Delete(ctx context.Context, db metainfo.MetabaseDB, scenario
 			ObjectLocation: location,
 		})
 		if err != nil {
-			return measurement, fmt.Errorf("delete object failed: %+v", err)
+			return measurement, fmt.Errorf("delete object failed: %w", err)
 		}
 		finish := hrtime.Now()
 		measurement.Record("Delete Object", finish-start)

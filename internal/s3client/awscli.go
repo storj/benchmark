@@ -6,6 +6,7 @@ package s3client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -202,8 +203,9 @@ func fullExitError(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	if exitErr, ok := err.(*exec.ExitError); ok {
-		return fmt.Errorf("%v\n%v\n%s", exitErr.Error(), string(exitErr.Stderr), msg)
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return fmt.Errorf("%w\n%v\n%s", exitErr, string(exitErr.Stderr), msg)
 	}
 	return err
 }

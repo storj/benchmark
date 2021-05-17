@@ -8,6 +8,7 @@ package s3client
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 
@@ -97,9 +98,9 @@ func (client *Minio) Download(bucket, objectName string, buffer []byte) ([]byte,
 	defer func() { _ = reader.Close() }()
 
 	n, err := reader.Read(buffer[:cap(buffer)])
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		rest, err := ioutil.ReadAll(reader)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			err = nil
 		}
 		if err != nil {

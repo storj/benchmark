@@ -289,7 +289,7 @@ func FileBenchmark(client s3client.Client, bucket string, filesize memory.Size, 
 			err := client.Upload(bucket, "data", data)
 			finish := hrtime.Now()
 			if err != nil {
-				return measurement, fmt.Errorf("upload failed: %+v", err)
+				return measurement, fmt.Errorf("upload failed: %w", err)
 			}
 
 			measurement.RecordSpeed("Upload", finish-start)
@@ -300,7 +300,7 @@ func FileBenchmark(client s3client.Client, bucket string, filesize memory.Size, 
 			var err error
 			result, err = client.Download(bucket, "data", result)
 			if err != nil {
-				return measurement, fmt.Errorf("get object failed: %+v", err)
+				return measurement, fmt.Errorf("get object failed: %w", err)
 			}
 			finish := hrtime.Now()
 
@@ -315,7 +315,7 @@ func FileBenchmark(client s3client.Client, bucket string, filesize memory.Size, 
 			start := hrtime.Now()
 			err := client.Delete(bucket, "data")
 			if err != nil {
-				return measurement, fmt.Errorf("delete failed: %+v", err)
+				return measurement, fmt.Errorf("delete failed: %w", err)
 			}
 			finish := hrtime.Now()
 
@@ -337,7 +337,7 @@ func ListBenchmark(client s3client.Client, bucket string, listsize int, count in
 			start := hrtime.Now()
 			result, err := client.ListObjects(bucket, "")
 			if err != nil {
-				return measurement, fmt.Errorf("list folders failed: %+v", err)
+				return measurement, fmt.Errorf("list folders failed: %w", err)
 			}
 			finish := hrtime.Now()
 			if len(result) != listsize {
@@ -349,7 +349,7 @@ func ListBenchmark(client s3client.Client, bucket string, listsize int, count in
 			start := hrtime.Now()
 			result, err := client.ListObjects(bucket, "folder")
 			if err != nil {
-				return measurement, fmt.Errorf("list files failed: %+v", err)
+				return measurement, fmt.Errorf("list files failed: %w", err)
 			}
 			finish := hrtime.Now()
 			if len(result) != listsize {
